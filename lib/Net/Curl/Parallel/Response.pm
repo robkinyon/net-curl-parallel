@@ -36,10 +36,16 @@ sub complete {
     = parse_http_response($self->raw_head, HEADERS_AS_HASHREF);
 
   $self->{status} = $status;
+
+  # parse_http_response() will always return a hashref in the headers.
+  # But, good coding says guard against randomness.
+  # uncoverable condition right
   $self->{headers} = $hdrs // {};
 
   $self->close_handles;
   $self->completed(1);
+
+  return 1;
 }
 
 sub fail {
@@ -54,6 +60,8 @@ sub fail {
 
   $self->close_handles;
   $self->completed(1);
+
+  return;
 }
 
 sub close_handles {

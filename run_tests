@@ -90,6 +90,7 @@ elif [[ "$1" == "cover" ]]; then
         docker run \
             -it --rm \
             $fix_for_root_user_in_container \
+            -e "NET_CURL_PARALLEL_NETWORK_TESTS=${NET_CURL_PARALLEL_NETWORK_TESTS:-1}" \
             -v $(pwd)/lib:/app/lib \
             -v $(pwd)/t:/app/t \
             -v $(pwd)/cover_db:/app/cover_db \
