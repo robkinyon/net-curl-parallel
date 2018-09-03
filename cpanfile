@@ -1,0 +1,34 @@
+requires 'Data::Printer';
+requires 'File::Find::Rule';
+requires 'Path::Tiny';
+requires 'Perl::Critic';
+
+requires "Guard";
+requires "HTTP::Parser::XS";
+requires "HTTP::Response";
+requires "Moo";
+requires "Net::Curl::Easy";
+requires "Net::Curl::Multi";
+requires "Type::Library";
+requires "Type::Utils";
+requires "Types::Standard";
+requires "URI::Fast";
+
+requires "Carp";
+requires "DateTime::Format::ISO8601";
+requires "Exporter";
+requires "Import::Into";
+requires "Scalar::Util";
+requires "Test2::API";
+requires "Test2::IPC";
+requires "Test2::Plugin::SpecDeclare";
+requires 'Test2::Pod';
+requires "Test2::Suite";
+requires "Test2::Todo";
+requires "Test2::Tools::Explain";
+requires "Test2::Tools::Spec";
+requires "Test2::V0";
+requires "Test::MockTime";
+requires "namespace::autoclean";
+requires "parent";
+requires "strictures";

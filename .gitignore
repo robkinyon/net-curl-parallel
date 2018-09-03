@@ -33,3 +33,14 @@ inc/
 /MANIFEST.bak
 /pm_to_blib
 /*.zip
+
+*.tar.gz
+.lwpcookies
+pod2htm*.tmp
+.DS_Store
+tags
+html
+man
+test_diffs
+build_log
+Dockerfile.5*
