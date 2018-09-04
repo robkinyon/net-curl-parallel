@@ -36,6 +36,7 @@ sub _queue {
   my $self = shift;
   my $die  = shift;
   my @args = ref $_[0] ? @_ : [@_];
+  # This map{} is meant to return the responses back up the chain.
   map{ $self->request($_, $die) } @args;
 }
 
@@ -121,7 +122,7 @@ sub setup_curl {
   $curl->setopt(CURLOPT_TIMEOUT_MS, $self->request_timeout)
     if $self->request_timeout;
 
-  # Clean up memory a little, but leave and undef at the index in the requests
+  # Clean up memory a little, but leave an undef at the index in the requests
   # array since we are using the index as the key.
   $self->requests->[$idx] = undef;
 
@@ -134,6 +135,9 @@ sub perform {
   my $pending = 0;
   my $idx     = 0;
 
+  # Both sides of the // can never be false because Net::Curl::Multi->new
+  # will always return true.
+  # uncoverable condition false
   $MULTI //= Net::Curl::Multi->new;
   my $multi = $MULTI;
 
@@ -366,6 +370,8 @@ The behavior of an individual request when an error is encountered (e.g. unable
 to reach the remote host, timeout, etc.) is determined by whether the request
 was added by L</add> or L</try>.
 
+B<NOTE>: This means perform() could end prematurely if a request added with L</add> throws an exception, even if all the other requests were added with L</try>.
+
 =head2 collect
 
 When called in list context, returns a list of responses corresponding to the
@@ -375,6 +381,8 @@ responses.
 When called in scalar context, returns a single response corresponding to the
 request id passed in. If called without arguments, returns an array ref holding
 all responses.
+
+B<NOTE>: This will B<not> block if the request is not completed with L</perform>.
 
 =head1 CAVEATS
 

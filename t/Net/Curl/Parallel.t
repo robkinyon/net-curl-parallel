@@ -45,4 +45,11 @@ SKIP: {
   };
 };
 
+# subtests:
+# request()
+# setup_curl()
+# perform()
+# collect()
+# fetch()
+
 done_testing;
