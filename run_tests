@@ -72,6 +72,7 @@ elif [[ "$1" == "test" ]]; then
             -it --rm \
             $fix_for_root_user_in_container \
             -e "NET_CURL_PARALLEL_NETWORK_TESTS=${NET_CURL_PARALLEL_NETWORK_TESTS:-1}" \
+            -e "TEST_AUTHOR=${TEST_AUTHOR-1}" \
             -v $(pwd)/lib:/app/lib \
             -v $(pwd)/t:/app/t \
             -v $(pwd)/.git:/app/.git \
@@ -91,6 +92,7 @@ elif [[ "$1" == "cover" ]]; then
             -it --rm \
             $fix_for_root_user_in_container \
             -e "NET_CURL_PARALLEL_NETWORK_TESTS=${NET_CURL_PARALLEL_NETWORK_TESTS:-1}" \
+            -e "TEST_AUTHOR=${TEST_AUTHOR-1}" \
             -v $(pwd)/lib:/app/lib \
             -v $(pwd)/t:/app/t \
             -v $(pwd)/cover_db:/app/cover_db \
