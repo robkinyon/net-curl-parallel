@@ -38,55 +38,6 @@ SKIP: {
     my $res = $fetch->collect(0);
     isa_ok $res, 'Net::Curl::Parallel::Response';
   };
-
-  subtest 'fetch' => sub{
-    ok my $res = Net::Curl::Parallel->fetch(GET => 'http://www.example.com'), 'fetch';
-    isa_ok $res, 'Net::Curl::Parallel::Response';
-  };
 };
-
-# subtests:
-# CLASS:
-# * fetch()
-# OBJ:
-# * add() / try()
-#   * _queue()
-#     * request()
-# * perform()
-# * collect()
-# PRIV:
-# * setup_curl()
-# * set_response()
-
-# request:
-# * keep_alive=0 --> Don't add header
-# * keep_alive=1, no Connection: in headers --> Add header
-# * keep_alive=1, Connection: in headers --> Don't add header
-# * method=POST, no Expect: in headers --> Add header
-# * method=POST, Expect: in headers --> Don't add header
-#
-# setup_curl:
-# * connect_timeout true --> set CURLOPT_CONNECTTIMEOUT_MS
-# * &CURLOPT_TCP_KEEPALIVE --> set CURLOPT_TCP_KEEPALIVE=1
-# * verbose=1 --> set CURLOPT_VERBOSE=1
-# * method=POST --> CURLOPT_POST=1, CURLOPT_POSTFIELDS=$content
-# * @$headers --> set CURLOPT_HTTPHEADER
-# * no @$headers --> don't set CURLOPT_HTTPHEADER
-# * request_timeout true --> set CURLOPT_TIMEOUT_MS
-#
-# perform:
-# * if no $msg after info_read()
-# * if $curl->{private}{die}
-#
-# collect:
-# * pass in one id
-# * pass in multiple ids
-# * pass in no ids
-#
-# fetch:
-# * call as classmethod
-# * call as objectmethod
-#   * Creates a new object to work against
-#   * Verify by calling on a used object
 
 done_testing;
