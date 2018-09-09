@@ -327,6 +327,8 @@ Max total request time in milliseconds. Defaults to 500.
 Autmatically set C<Connection: keep-alive> on all HTTP requests. Defaults to
 true.
 
+If a request already has a C<Connection:> header, that header will be left alone.
+
 =item verbose
 
 Turn on verbose logging within curl. Defaults to false.
@@ -348,6 +350,9 @@ corresponds to the order of requests passed to C<add> as parameters.
 
   my @ids  = $fetch->add($req1, $req2, $req3);
   my ($id) = $fetch->add(GET => ...);
+
+  # This also works.
+  my $id   = $fetch->add(GET => ...);
 
 =head2 try
 
@@ -389,6 +394,17 @@ request id passed in. If called without arguments, returns an array ref holding
 all responses.
 
 B<NOTE>: This will B<not> block if the request is not completed with L</perform>.
+
+=head1 NOTES
+
+=head2 POSTs and Expect header
+
+If you L</add> a POST request, libcurl normally adds a 'Expect: 100-continue'
+header depending on the body size. This can often result in undesirable
+behavior, so Net::Curl::Parallel disables that by adding a blank 'Expect:'
+header by default.
+
+You can set an 'Expect:' header and Net::Curl::Parallel will leave it alone.
 
 =head1 CAVEATS
 
