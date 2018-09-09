@@ -29,15 +29,18 @@ has responses       => (is => 'ro', default => sub{ [] });
 has curl_multi => (is => 'ro', init_arg => undef, default => sub{ $MULTI });
 has curls      => (is => 'ro', init_arg => undef, default => sub{ \@CURLS });
 
-sub add{ shift->_queue(1, @_) }
-sub try{ shift->_queue(0, @_) }  ## no critic (TryTiny)
+sub add { shift->_queue(1, @_) }
+sub try { shift->_queue(0, @_) }  ## no critic (TryTiny)
 
 sub _queue {
   my $self = shift;
   my $die  = shift;
   my @args = ref $_[0] ? @_ : [@_];
-  # This map{} is meant to return the responses back up the chain.
-  map{ $self->request($_, $die) } @args;
+  my @rv = map { $self->request($_, $die) } @args;
+
+  return $rv[0] if @rv == 1;
+  return @rv if wantarray;
+  return [@rv];
 }
 
 sub request {
