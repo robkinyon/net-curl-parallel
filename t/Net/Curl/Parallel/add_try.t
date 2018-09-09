@@ -144,4 +144,36 @@ subtest 'keep-alive' => sub {
   };
 };
 
+subtest 'POST' => sub {
+  subtest 'without expect set' => sub {
+    my $f = Net::Curl::Parallel->new(keep_alive => 0);
+
+    my $rv = $f->add(
+      [ POST => 'http://example.com' ],
+    );
+    my $req = $f->requests->[$rv];
+
+    my $expected_headers = array {
+      item string 'Expect:';
+    };
+
+    is $req->[2], $expected_headers, 'NCP adds the Expect header';
+  };
+
+  subtest 'with expect set' => sub {
+    my $f = Net::Curl::Parallel->new(keep_alive => 0);
+
+    my $rv = $f->add(
+      [ POST => 'http://example.com', [ 'Expect: whatever' ] ],
+    );
+    my $req = $f->requests->[$rv];
+
+    my $expected_headers = array {
+      item string 'Expect: whatever';
+    };
+
+    is $req->[2], $expected_headers, 'NCP preserves the Expect header';
+  };
+};
+
 done_testing;
