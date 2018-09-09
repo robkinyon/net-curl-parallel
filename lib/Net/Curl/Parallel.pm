@@ -67,6 +67,9 @@ sub request {
 sub setup_curl {
   my ($self, $idx) = @_;
   my ($method, $uri, $headers, $content, $die) = @{$self->requests->[$idx]};
+  # Both sides of the // can never be false because Net::Curl::Easy->new
+  # will always return true.
+  # uncoverable condition false
   my $curl = shift(@CURLS) // Net::Curl::Easy->new;
 
   $curl->{private} = {
