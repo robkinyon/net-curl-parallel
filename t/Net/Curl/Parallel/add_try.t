@@ -9,10 +9,6 @@ use HTTP::Request;
 use Types::Standard -types;
 use Net::Curl::Parallel;
 
-#is [$fetch->add(HTTP::Request->new(GET => 'http://www.example.com'), HTTP::Request->new(GET => 'http://www.example.com'))], [0, 1], 'add HTTP::Request';
-#is [$fetch->add(GET => 'http://www.example.com')], [2], 'add HTTP::Request args';
-#is [$fetch->try(GET => 'http://www.example.ihopethisneverbecomesarealtldorthistestwillbreak')], [3], 'try';
-
 # These methods take the following signatures (enforced by Types->Request)
 # * HTTP::Request object
 # * [method, uri, headers, content]
@@ -76,6 +72,75 @@ subtest 'Add many' => sub {
     );
 
     is [$rv], [[0,1]], 'Returns an arrayref properly';
+  };
+};
+
+subtest 'keep-alive' => sub {
+  subtest 'keep-alive true, no header' => sub {
+    my $f = Net::Curl::Parallel->new(
+      keep_alive => 1,
+    );
+
+    my $rv = $f->add(
+      [ GET => 'http://example.com' ],
+    );
+    my $req = $f->requests->[$rv];
+
+    my $expected_headers = array {
+      item string 'Connection: keep-alive';
+    };
+
+    is $req->[2], $expected_headers, 'NCP adds the keep-alive header';
+  };
+
+  subtest 'keep-alive true, with header' => sub {
+    my $f = Net::Curl::Parallel->new(
+      keep_alive => 1,
+    );
+
+    my $rv = $f->add(
+      [ GET => 'http://example.com', [ 'Connection: close' ] ],
+    );
+    my $req = $f->requests->[$rv];
+
+    my $expected_headers = array {
+      item string 'Connection: close';
+    };
+
+    is $req->[2], $expected_headers, 'NCP preserves the connection header';
+  };
+
+  subtest 'keep-alive false, no header' => sub {
+    my $f = Net::Curl::Parallel->new(
+      keep_alive => 0,
+    );
+
+    my $rv = $f->add(
+      [ GET => 'http://example.com' ],
+    );
+    my $req = $f->requests->[$rv];
+
+    my $expected_headers = array {
+    };
+
+    is $req->[2], $expected_headers, 'NCP does not add the keep-alive header';
+  };
+
+  subtest 'keep-alive false, with header' => sub {
+    my $f = Net::Curl::Parallel->new(
+      keep_alive => 0,
+    );
+
+    my $rv = $f->add(
+      [ GET => 'http://example.com', [ 'Connection: close' ] ],
+    );
+    my $req = $f->requests->[$rv];
+
+    my $expected_headers = array {
+      item string 'Connection: close';
+    };
+
+    is $req->[2], $expected_headers, 'NCP preserves the connection header';
   };
 };
 
