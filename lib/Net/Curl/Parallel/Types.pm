@@ -133,7 +133,7 @@ An optional string (C<Maybe[Str]>). Coercible from a hash ref of query
 parameters or an array ref of key/value tuples to a url-encoded string. There
 are no coercions or automatic url-encoding of binary data or other formats.
 
-  {foo => 'bar 'bat'}               -> foo=bar%20bat
+  {foo => 'bar bat'}               -> foo=bar%20bat
   {foo => ['bar', 'bat']}           -> foo=bar&foo=bat
   [['foo', 'bar bat']]              -> foo=bar%20bat
   [['foo', 'bar'], ['foo', 'bat']]  -> foo=bar&foo=bat

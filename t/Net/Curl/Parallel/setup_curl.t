@@ -64,13 +64,133 @@ subtest 'default settings' => sub {
 
 # TESTS:
 # if !POST && !keep_alive, then no headers set
+subtest 'keep_alive false -> no headers' => sub {
+  my $f = Net::Curl::Parallel->new(
+    keep_alive => 0,
+  );
+
+  my $idx = $f->add(GET => 'http://www.example.com');
+  my $curl = $f->setup_curl($idx);
+
+  is $curl->{opts}{CURLOPT_HTTPHEADER()}, undef, 'CURLOPT_HTTPHEADER';
+};
+
 # verbose -> VERBOSE
+subtest 'setting verbose' => sub {
+  my $f = Net::Curl::Parallel->new(
+    verbose => 1,
+  );
+
+  my $idx = $f->add(GET => 'http://www.example.com');
+  my $curl = $f->setup_curl($idx);
+
+  is $curl->{opts}{CURLOPT_VERBOSE()}, [1], 'CURLOPT_VERBOSE set';
+};
+
 # adding headers show up
+subtest 'adding a header' => sub {
+  my $f = Net::Curl::Parallel->new;
+
+  my $idx = $f->add(GET => 'http://www.example.com', ['Header1: foo']);
+  my $curl = $f->setup_curl($idx);
+
+  is $curl->{opts}{CURLOPT_HTTPHEADER()}, [[
+    'Header1: foo',
+    'Connection: keep-alive',
+  ]], 'CURLOPT_HTTPHEADER';
+};
+
 # Verify changing the following result in changes:
 # * connect_timeout
+#   * 0 => undef
+#   * 1 => [1]
+subtest 'Zeroing the connect timeout' => sub {
+  my $f = Net::Curl::Parallel->new(
+    connect_timeout => 0,
+  );
+
+  my $idx = $f->add(GET => 'http://www.example.com');
+  my $curl = $f->setup_curl($idx);
+
+  is $curl->{opts}{CURLOPT_CONNECTTIMEOUT_MS()}, undef, 'CURLOPT_CONNECTTIMEOUT_MS';
+};
+subtest 'Setting the connect timeout to 1' => sub {
+  my $f = Net::Curl::Parallel->new(
+    connect_timeout => 1,
+  );
+
+  my $idx = $f->add(GET => 'http://www.example.com');
+  my $curl = $f->setup_curl($idx);
+
+  is $curl->{opts}{CURLOPT_CONNECTTIMEOUT_MS()}, [1], 'CURLOPT_CONNECTTIMEOUT_MS';
+};
+
 # * agent
+subtest 'Changing the agent shows up' => sub {
+  my $f = Net::Curl::Parallel->new(
+    agent => 'My Agent',
+  );
+
+  my $idx = $f->add(GET => 'http://www.example.com');
+  my $curl = $f->setup_curl($idx);
+
+  is $curl->{opts}{CURLOPT_USERAGENT()}, ['My Agent'], 'CURLOPT_USERAGENT';
+};
+
 # * uri
+subtest 'Changing the URI shows up' => sub {
+  my $f = Net::Curl::Parallel->new;
+
+  my $idx = $f->add(GET => 'http://not.your.example.com');
+  my $curl = $f->setup_curl($idx);
+
+  is $curl->{opts}{CURLOPT_URL()}, ['http://not.your.example.com'], 'CURLOPT_URL';
+};
+
 # * verify_ssl_peer
+subtest 'Changing the URI shows up' => sub {
+  my $f = Net::Curl::Parallel->new(
+    verify_ssl_peer => 0,
+  );
+
+  my $idx = $f->add(GET => 'http://www.example.com');
+  my $curl = $f->setup_curl($idx);
+
+  is $curl->{opts}{CURLOPT_SSL_VERIFYPEER()}, [0], 'CURLOPT_SSL_VERIFYPEER';
+};
+
 # * request_timeout
+#   * 0 => undef
+#   # 1 => [1]
+subtest 'Zeroing the request timeout' => sub {
+  my $f = Net::Curl::Parallel->new(
+    request_timeout => 0,
+  );
+
+  my $idx = $f->add(GET => 'http://www.example.com');
+  my $curl = $f->setup_curl($idx);
+
+  is $curl->{opts}{CURLOPT_TIMEOUT_MS()}, undef, 'CURLOPT_TIMEOUT_MS';
+};
+subtest 'Setting the request timeout to 1' => sub {
+  my $f = Net::Curl::Parallel->new(
+    request_timeout => 1,
+  );
+
+  my $idx = $f->add(GET => 'http://www.example.com');
+  my $curl = $f->setup_curl($idx);
+
+  is $curl->{opts}{CURLOPT_TIMEOUT_MS()}, [1], 'CURLOPT_TIMEOUT_MS';
+};
+
+subtest 'POST' => sub {
+  my $f = Net::Curl::Parallel->new;
+
+  my $idx = $f->add(POST => 'http://www.example.com', undef, { foo => 1, bar => 2 });
+  my $curl = $f->setup_curl($idx);
+
+  is $curl->{opts}{CURLOPT_POST()}, [1], 'CURLOPT_POST';
+  is $curl->{opts}{CURLOPT_POSTFIELDS()}, in_set(['foo=1&bar=2'], ['bar=2&foo=1']), 'CURLOPT_POSTFIELD';
+};
 
 done_testing;
