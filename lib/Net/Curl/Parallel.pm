@@ -90,7 +90,9 @@ sub setup_curl {
   $curl->setopt(CURLOPT_CONNECTTIMEOUT_MS, $self->connect_timeout)
     if $self->connect_timeout;
 
-  # Keep idle TCP connections alive longer
+  # Keep idle TCP connections alive longer. Note - this option is available
+  # starting in libcurl 7.25.0
+  # uncoverable branch false
   $curl->setopt(CURLOPT_TCP_KEEPALIVE, 1)
     if &CURLOPT_TCP_KEEPALIVE;
 
