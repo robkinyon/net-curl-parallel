@@ -11,10 +11,6 @@ use Net::Curl::Multi qw(:constants);
 use Net::Curl::Parallel::Types -types;
 use Net::Curl::Parallel::Response;
 
-my $MAX_CURLS = 50; # max number of curls to retain globally
-my @CURLS;
-my $MULTI;
-
 has agent           => (is => 'ro', default => 'Net::Curl::Parallel/v0.1');
 has slots           => (is => 'ro', default => 10);
 has connect_timeout => (is => 'ro', default => 50);
@@ -26,8 +22,9 @@ has verbose         => (is => 'rw', default => 0);
 has requests        => (is => 'ro', default => sub{ [] });
 has responses       => (is => 'ro', default => sub{ [] });
 
-has curl_multi => (is => 'ro', init_arg => undef, default => sub{ $MULTI });
-has curls      => (is => 'ro', init_arg => undef, default => sub{ \@CURLS });
+has curl_multi => (is => 'ro', default => sub{ Net::Curl::Multi->new });
+has curls      => (is => 'ro', default => sub{ [] });
+has max_curls  => (is => 'ro', default => 50);
 
 sub add { shift->_queue(1, @_) }
 sub try { shift->_queue(0, @_) }  ## no critic (TryTiny)
@@ -73,7 +70,7 @@ sub setup_curl {
   # Both sides of the // can never be false because Net::Curl::Easy->new
   # will always return true.
   # uncoverable condition false
-  my $curl = shift(@CURLS) // Net::Curl::Easy->new;
+  my $curl = shift(@{$self->curls}) // Net::Curl::Easy->new;
 
   $curl->{private} = {
     response => Net::Curl::Parallel::Response->new,
@@ -143,42 +140,36 @@ sub perform {
   my $pending = 0;
   my $idx     = 0;
 
-  # Both sides of the // can never be false because Net::Curl::Multi->new
-  # will always return true.
-  # uncoverable condition false
-  $MULTI //= Net::Curl::Multi->new;
-  my $multi = $MULTI;
-
   $self->{responses} = []; # clear responses state from any prior runs
   scope_guard{ $self->{requests} = [] }; # clear state for next run
 
   until ($idx == $total && $pending == 0) {
     # Fill empty slots
     while ($idx < $total && $pending < $self->slots) {
-      $multi->add_handle($self->setup_curl($idx));
+      $self->curl_multi->add_handle($self->setup_curl($idx));
       ++$pending;
       ++$idx;
     }
 
-    $multi->wait(1);
-    my $running = $multi->perform;
+    $self->curl_multi->wait(1);
+    my $running = $self->curl_multi->perform;
 
     # At least one request is complete
     if ($running != $pending) {
-      my ($msg, $curl, $result) = $multi->info_read;
+      my ($msg, $curl, $result) = $self->curl_multi->info_read;
 
       # A request is complete
       if ($msg) {
         scope_guard{
           --$pending;
 
-          $multi->remove_handle($curl);
+          $self->curl_multi->remove_handle($curl);
 
           delete $curl->{private};
           $curl->reset;
 
-          # Ignore MAX_CURLS while perform() is running
-          push @CURLS, $curl;
+          # Ignore max_curls while perform() is running
+          push @{$self->curls}, $curl;
         };
 
         my $ridx = $curl->{private}{idx};
@@ -200,7 +191,7 @@ sub perform {
   }
 
   # Remove extraneous curl instances
-  $#CURLS = $MAX_CURLS;
+  $#{$self->curls} = $self->max_curls;
 
   return @{$self->responses};
 }
