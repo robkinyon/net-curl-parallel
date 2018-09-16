@@ -9,52 +9,70 @@ use HTTP::Request;
 use Types::Standard -types;
 use Net::Curl::Parallel;
 
-use Net::Curl::Easy qw(:constants);
-use Net::Curl::Multi qw(:constants);
+#use Net::Curl::Easy qw(:constants);
+#use Net::Curl::Multi qw(:constants);
 
-use Test::MockModule;
 use DDP;
-
-my $easy = Test::MockModule->new('Net::Curl::Easy');
-$easy->mock(setopt => sub {
-  my $self = shift;
-  my ($opt, @args) = @_;
-
-  $self->{opts} //= {};
-  $self->{opts}{$opt} = [@args];
-
-  return 1;
-});
-
-my $multi = Test::MockModule->new('Net::Curl::Multi');
-$multi->mock(add_handle => sub {
-  my $self = shift;
-  $self->{called}{add_handle}++;
-});
-$multi->mock(wait => sub {
-  my $self = shift;
-  $self->{called}{wait}++;
-});
-$multi->mock(perform => sub {
-  my $self = shift;
-  $self->{called}{perform}++;
-});
-$multi->mock(info_read => sub {
-  my $self = shift;
-  $self->{called}{info_read}++;
-});
-$multi->mock(remove_handle => sub {
-  my $self = shift;
-  $self->{called}{remove_handle}++;
-});
+use Test::HTTP::MockServer;
 
 subtest 'perform with no requests' => sub {
   my $f = Net::Curl::Parallel->new;
 
   my @responses = $f->perform;
   is [@responses], [], 'empty perform does no responses';
+};
 
-  is $f->curl_multi->{called}{add_handle}, undef, 'add_handle never called';
+subtest 'perform with one request' => sub {
+  my $f = Net::Curl::Parallel->new;
+
+  my $server = Test::HTTP::MockServer->new;
+  $f->add(GET => $server->url_base);
+
+  $server->start_mock_server(sub {
+    my ($req, $res) = @_;
+
+    $res->content('hello');
+
+    return $res;
+  });
+
+  my @responses = $f->perform;
+
+  $server->stop_mock_server;
+
+  is [map { $_->content } @responses], ['hello'], 'perform with one request';
+};
+
+subtest 'perform with two requests' => sub {
+  my $f = Net::Curl::Parallel->new;
+
+  my $server = Test::HTTP::MockServer->new;
+  $f->add(GET => $server->url_base);
+
+  my $server2 = Test::HTTP::MockServer->new;
+  $f->add(GET => $server2->url_base);
+
+  $server->start_mock_server(sub {
+    my ($req, $res) = @_;
+
+    $res->content('hello from 1');
+
+    return $res;
+  });
+  $server2->start_mock_server(sub {
+    my ($req, $res) = @_;
+
+    $res->content('hello from 2');
+
+    return $res;
+  });
+
+  my @responses = $f->perform;
+
+  $server->stop_mock_server;
+  $server2->stop_mock_server;
+
+  is [map { $_->content } @responses], ['hello from 1', 'hello from 2'], 'perform with two requests';
 };
 
 done_testing;
