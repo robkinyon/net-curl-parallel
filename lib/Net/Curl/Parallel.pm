@@ -11,7 +11,9 @@ use Net::Curl::Multi qw(:constants);
 use Net::Curl::Parallel::Types -types;
 use Net::Curl::Parallel::Response;
 
-has agent           => (is => 'ro', default => 'Net::Curl::Parallel/v0.1');
+my @CURLS;
+
+has agent           => (is => 'ro', default => 'Net::Curl::Parallel/v2.0');
 has slots           => (is => 'ro', default => 10);
 has connect_timeout => (is => 'ro', default => 50);
 has request_timeout => (is => 'ro', default => 500);
@@ -23,7 +25,7 @@ has requests        => (is => 'ro', default => sub{ [] });
 has responses       => (is => 'ro', default => sub{ [] });
 
 has curl_multi => (is => 'ro', default => sub{ Net::Curl::Multi->new });
-has curls      => (is => 'ro', default => sub{ [] });
+has curls      => (is => 'ro', default => sub{ \@CURLS });
 has max_curls  => (is => 'ro', default => 50);
 
 sub add { shift->_queue(1, @_) }
