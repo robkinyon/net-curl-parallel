@@ -32,8 +32,8 @@ has verbose         => (is => 'rw', default => 0);
 has requests        => (is => 'ro', default => sub{ [] });
 has responses       => (is => 'ro', default => sub{ [] });
 
-has curl_multi        => (is => 'ro', default => sub{ Net::Curl::Multi->new });
-has avail_curl_pool   => (is => 'ro', default => sub{ \@AVAIL_CURL_POOL });
+has curl_multi      => (is => 'ro', default => sub{ Net::Curl::Multi->new });
+has avail_curl_pool => (is => 'ro', default => sub{ \@AVAIL_CURL_POOL });
 
 sub add { shift->_queue(1, @_) }
 sub try { shift->_queue(0, @_) }  ## no critic (TryTiny)
@@ -79,8 +79,10 @@ sub setup_curl {
   # Both sides of the // can never be false because Net::Curl::Easy->new
   # will always return true.
   # uncoverable condition false
-  my $curl = shift(@{$self->avail_curl_pool}) // Net::Curl::Easy->new;
+  my $curl = shift(@{$self->avail_curl_pool}) // Net::Curl::Easy->new({});
 
+  # This is okay because the first parameter to Net::Curl::Easy->new() is the
+  # base object. We can put whatever we want into here.
   $curl->{private} = {
     response => Net::Curl::Parallel::Response->new,
     idx  => $idx,
@@ -291,6 +293,10 @@ L<Net::Curl::Parallel::Response/failed>.
   } else {
     ...
   }
+
+=head2 max_curls_in_pool
+
+Please see the NOTES below about this class method.
 
 =head1 METHODS
 
