@@ -9,10 +9,6 @@ use HTTP::Request;
 use Types::Standard -types;
 use Net::Curl::Parallel;
 
-#use Net::Curl::Easy qw(:constants);
-#use Net::Curl::Multi qw(:constants);
-
-use DDP;
 use Test::HTTP::MockServer;
 
 subtest 'perform with no requests' => sub {
