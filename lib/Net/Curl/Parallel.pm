@@ -11,7 +11,15 @@ use Net::Curl::Multi qw(:constants);
 use Net::Curl::Parallel::Types -types;
 use Net::Curl::Parallel::Response;
 
-my @CURLS;
+my @AVAIL_CURL_POOL;
+{
+  my $MAX_CURLS_IN_POOL = 50;
+  sub max_curls_in_pool {
+    shift;
+    $MAX_CURLS_IN_POOL = $_[0] if @_;
+    return $MAX_CURLS_IN_POOL;
+  }
+}
 
 has agent           => (is => 'ro', default => 'Net::Curl::Parallel/v2.0');
 has slots           => (is => 'ro', default => 10);
@@ -24,9 +32,8 @@ has verbose         => (is => 'rw', default => 0);
 has requests        => (is => 'ro', default => sub{ [] });
 has responses       => (is => 'ro', default => sub{ [] });
 
-has curl_multi => (is => 'ro', default => sub{ Net::Curl::Multi->new });
-has curls      => (is => 'ro', default => sub{ \@CURLS });
-has max_curls  => (is => 'ro', default => 50);
+has curl_multi        => (is => 'ro', default => sub{ Net::Curl::Multi->new });
+has avail_curl_pool   => (is => 'ro', default => sub{ \@AVAIL_CURL_POOL });
 
 sub add { shift->_queue(1, @_) }
 sub try { shift->_queue(0, @_) }  ## no critic (TryTiny)
@@ -72,7 +79,7 @@ sub setup_curl {
   # Both sides of the // can never be false because Net::Curl::Easy->new
   # will always return true.
   # uncoverable condition false
-  my $curl = shift(@{$self->curls}) // Net::Curl::Easy->new;
+  my $curl = shift(@{$self->avail_curl_pool}) // Net::Curl::Easy->new;
 
   $curl->{private} = {
     response => Net::Curl::Parallel::Response->new,
@@ -171,7 +178,7 @@ sub perform {
           $curl->reset;
 
           # Ignore max_curls while perform() is running
-          push @{$self->curls}, $curl;
+          push @{$self->avail_curl_pool}, $curl;
         };
 
         my $ridx = $curl->{private}{idx};
@@ -193,7 +200,7 @@ sub perform {
   }
 
   # Remove extraneous curl instances
-  $#{$self->curls} = $self->max_curls;
+  $#{$self->avail_curl_pool} = $self->max_curls_in_pool;
 
   return @{$self->responses};
 }
@@ -400,6 +407,22 @@ behavior, so Net::Curl::Parallel disables that by adding a blank 'Expect:'
 header by default.
 
 You can set an 'Expect:' header and Net::Curl::Parallel will leave it alone.
+
+=head2 Pool of curls
+
+In order to conserve memory, there is a process-global pool of Net::Curl::Easy
+objects. These are the objects that do the actual HTTP requests. You can access
+them with C<< $self->curls >>.
+
+The pool's size defaults to 50. You can set this by calling
+
+  # Or whatever number
+  Net::Curl::Parallel->max_curls_in_pool(20);
+
+The pool will be resized the next time L</perform> completes.
+
+Note: The pool's max size is ignored while L</perform> is running; the max is
+only enforced at the end of L</perform>.
 
 =head1 CAVEATS
 
