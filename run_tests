@@ -104,14 +104,14 @@ elif [[ "$1" == "cover" ]]; then
 elif [[ "$1" == "release" ]]; then
     shift
 
-    if [[ ! -f "~/.pause" ]]; then
+    if [[ ! -f "$HOME/.pause" ]]; then
         >&2 echo "No ~/.pause file found."
         exit 1
     fi
 
     # Because of an interaction between Docker-toolbox and Git-bash, we have to
     # copy the .pause here out of $HOME.
-    cp ~/.pause .
+    cp "$HOME/.pause" .
 
     tag=5.26
     if [[ -z $(docker images -q ${container}:${tag}) ]]; then
@@ -121,8 +121,6 @@ elif [[ "$1" == "release" ]]; then
     files_dirs_to_map=(
         lib t
         Changes LICENSE
-        Makefile.PL inc
-        MANIFEST MANIFEST.SKIP
         .git
     )
 
@@ -136,7 +134,7 @@ elif [[ "$1" == "release" ]]; then
         "${volumes[@]}" \
         --entrypoint bash \
         ${container}:${tag} \
-            -c "carton exec perl Makefile.PL && make dist && cpan-upload *.tar.gz"
+            -c "dzil release"
 else
     >&2 echo "${ME}: <pull | build | test | unit integration | cover | release> [command]"
     exit 1
