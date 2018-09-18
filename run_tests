@@ -13,7 +13,7 @@ container="robkinyon/net-curl-parallel-test"
 #    Configure failed for Dist-Zilla-6.010.
 # 5.18 doesn't build
 #     Installing DateTime::Format::Atom failed.
-all_versions="5.10 5.14 5.16 5.18 5.20 5.22 5.24 5.26"
+all_versions="5.14 5.16 5.18 5.20 5.22 5.24 5.26"
 
 # This is to handle GitBash's auto-mangling of path names when interacting
 # with Docker. Without this, Docker cannot mount volumes properly.
@@ -41,6 +41,7 @@ if [[ "$1" == "bash" ]]; then
         -v $(pwd)/lib:/app/lib \
         -v $(pwd)/t:/app/t \
         -v $(pwd)/.git:/app/.git \
+        -v $(pwd)/README.md:/app/README.md \
         ${container}:${version} \
             bash
 elif [[ "$1" == "pull" ]]; then
@@ -59,7 +60,7 @@ elif [[ "$1" == "build" ]]; then
                 > Dockerfile.${version}
             docker build -t ${container}:${version} -f Dockerfile.${version} .
             rm Dockerfile.${version}
-        ) #&>build_log/${version}.log
+        ) &>build_log/${version}.log
         set -e
     done
 elif [[ "$1" == "test" ]]; then
