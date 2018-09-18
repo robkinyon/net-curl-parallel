@@ -8,11 +8,9 @@ mydir=$(cd $(dirname $ME) && pwd)
 cd $mydir
 
 container="robkinyon/net-curl-parallel-test"
-# Broken: 5.12
-# 5.10 doesn't build
+# Broken:
+# 5.10 and 5.12 don't build
 #    Configure failed for Dist-Zilla-6.010.
-# 5.18 doesn't build
-#     Installing DateTime::Format::Atom failed.
 all_versions="5.14 5.16 5.18 5.20 5.22 5.24 5.26"
 
 # This is to handle GitBash's auto-mangling of path names when interacting
