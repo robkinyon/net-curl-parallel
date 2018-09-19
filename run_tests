@@ -29,6 +29,15 @@ fix_for_root_user_in_container=""
 #    -u $(id -u):$(id -g)
 #"
 
+files_dirs_to_map=(
+    lib t dist.ini
+    .git README.md
+)
+volumes=(-v $(pwd)/.pause:/app/.pause)
+for item in ${files_dirs_to_map[@]}; do
+    volumes+=(-v $(pwd)/$item:/app/$item)
+done
+
 versions=${PERL_VERSIONS:-${all_versions}}
 if [[ "$1" == "bash" ]]; then
     version="5.26"
@@ -36,10 +45,7 @@ if [[ "$1" == "bash" ]]; then
     docker run \
         -it --rm \
         $fix_for_root_user_in_container \
-        -v $(pwd)/lib:/app/lib \
-        -v $(pwd)/t:/app/t \
-        -v $(pwd)/.git:/app/.git \
-        -v $(pwd)/README.md:/app/README.md \
+        "${volumes[@]}" \
         ${container}:${version} \
             bash
 elif [[ "$1" == "pull" ]]; then
@@ -72,9 +78,7 @@ elif [[ "$1" == "test" ]]; then
             $fix_for_root_user_in_container \
             -e "NET_CURL_PARALLEL_NETWORK_TESTS=${NET_CURL_PARALLEL_NETWORK_TESTS:-1}" \
             -e "TEST_AUTHOR=${TEST_AUTHOR:-1}" \
-            -v $(pwd)/lib:/app/lib \
-            -v $(pwd)/t:/app/t \
-            -v $(pwd)/.git:/app/.git \
+            "${volumes[@]}" \
             ${container}:${version} \
                 $test_command
     done
@@ -92,10 +96,7 @@ elif [[ "$1" == "cover" ]]; then
             $fix_for_root_user_in_container \
             -e "NET_CURL_PARALLEL_NETWORK_TESTS=${NET_CURL_PARALLEL_NETWORK_TESTS:-1}" \
             -e "TEST_AUTHOR=${TEST_AUTHOR:-1}" \
-            -v $(pwd)/lib:/app/lib \
-            -v $(pwd)/t:/app/t \
-            -v $(pwd)/cover_db:/app/cover_db \
-            -v $(pwd)/.git:/app/.git \
+            "${volumes[@]}" \
             ${container}:${version} \
                 cover
 
@@ -117,17 +118,6 @@ elif [[ "$1" == "release" ]]; then
     if [[ -z $(docker images -q ${container}:${tag}) ]]; then
         $ME build ${tag}
     fi
-
-    files_dirs_to_map=(
-        lib t
-        Changes LICENSE
-        .git
-    )
-
-    volumes=(-v $(pwd)/.pause:/root/.pause)
-    for item in ${files_dirs_to_map[@]}; do
-        volumes+=(-v $(pwd)/$item:/app/$item)
-    done
 
     docker run \
         --rm \

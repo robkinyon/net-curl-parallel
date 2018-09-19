@@ -24,8 +24,11 @@ COPY "lib" "/app/lib"
 
 COPY "devops/within_container" "/usr/local/bin/within_container"
 
-RUN cpanm $(dzil listdeps) \
-  && cpanm $(dzil authordeps)
+RUN cpanm $(dzil authordeps)
+# File::Spec has a weird error that needs to be force-installed.
+# It doesn't actually affect anything ... ?
+RUN cpanm --force File::Spec
+RUN cpanm $(dzil listdeps)
 
 ENTRYPOINT [ "/usr/local/bin/within_container" ]
 CMD [ "prove", "-lrs" ]
